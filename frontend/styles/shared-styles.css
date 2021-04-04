@@ -1,0 +1,23 @@
+/*
+   CSS styling examples for the Vaadin app.
+   Visit https://vaadin.com/docs/flow/theme/theming-overview.html and
+   https://vaadin.com/themes/lumo for more information.
+*/
+
+/* Example: CSS class name to center align the content . */
+.centered-content {
+  margin: 0 auto;
+  max-width: 250px;
+}
+.header h1.logo {
+  font-size: 1em;
+  margin: var(--lumo-space-m);
+  child-align: middle;
+    margin-left: 30px;
+}
+
+.list-view .H1{
+  text-align: center;
+  alignment: center;
+
+}
