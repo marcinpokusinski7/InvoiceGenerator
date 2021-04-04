@@ -94,8 +94,11 @@ public class InvoiceGenerator extends VerticalLayout {
 
     private void configureAddButton() {
         add.addClickListener(click -> {
-            addToGrid();
-            productsAdded.getDataProvider().refreshAll();
+            chooseProduct.getSelectedItems().forEach(e -> {
+                int findId = e.getId();
+                productList.add(findId);
+            });
+            productsAdded.setItems(productService.getProductRepository().findAllById(productList));
         });
     }
 
@@ -110,26 +113,6 @@ public class InvoiceGenerator extends VerticalLayout {
         searchItems.setValueChangeMode(ValueChangeMode.LAZY);
         searchItems.addValueChangeListener(e -> updateList());
         searchItems.getStyle().set("width", "300px");
-    }
-
-    private void addToGrid() {
-        chooseProduct.addSelectionListener(e ->{
-            e.getAllSelectedItems().stream().forEach(product -> {
-               int findById = product.getId();
-               productList.add(findById);
-            });
-        });
-/*//        chooseProduct.asMultiSelect().addValueChangeListener(e -> {
-//
-////            Stream<Integer> findById = e.getValue().stream().map(Product::getId);
-////            List<Integer> list = findById.collect(Collectors.toList());
-////            productList.add(productService.getProductRepository().findAllById(list));
-//// add multiple items to table
-////                list.add(productService.findAll().get(id));
-////               productsAdded.setItems(productService.findAll().get(id);
-//        });*/
-        productsAdded.setItems(productService.getProductRepository().findAllById(productList));
-
     }
 
 
