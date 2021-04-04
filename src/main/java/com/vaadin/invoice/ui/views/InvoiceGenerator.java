@@ -20,15 +20,13 @@ import com.vaadin.invoice.ui.MainLayout;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Route(value = "create", layout = MainLayout.class)
 @CssImport("./styles/shared-styles.css")
 @CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
 public class InvoiceGenerator extends VerticalLayout {
     private ProductService productService;
-    List<Product> productList = new ArrayList<Product>();
+    List<Integer> productList = new ArrayList<Integer>();
 
     TextField searchItems = new TextField();
     TextField preparedBy = new TextField("Full name");
@@ -115,15 +113,22 @@ public class InvoiceGenerator extends VerticalLayout {
     }
 
     private void addToGrid() {
-        chooseProduct.asMultiSelect().addValueChangeListener(e -> {
-            Stream<Integer> findById = e.getValue().stream().map(Product::getId);
-            List<Integer> list = findById.collect(Collectors.toList());
-            productList.add(productService.getProductRepository().findAllById(list));
-// add multiple items to table
-//                list.add(productService.findAll().get(id));
-//               productsAdded.setItems(productService.findAll().get(id);
+        chooseProduct.addSelectionListener(e ->{
+            e.getAllSelectedItems().stream().forEach(product -> {
+               int findById = product.getId();
+               productList.add(findById);
+            });
         });
-        productsAdded.setItems(productList);
+/*//        chooseProduct.asMultiSelect().addValueChangeListener(e -> {
+//
+////            Stream<Integer> findById = e.getValue().stream().map(Product::getId);
+////            List<Integer> list = findById.collect(Collectors.toList());
+////            productList.add(productService.getProductRepository().findAllById(list));
+//// add multiple items to table
+////                list.add(productService.findAll().get(id));
+////               productsAdded.setItems(productService.findAll().get(id);
+//        });*/
+        productsAdded.setItems(productService.getProductRepository().findAllById(productList));
 
     }
 

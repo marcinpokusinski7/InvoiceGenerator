@@ -9,7 +9,7 @@ import com.vaadin.invoice.entity.Invoice;
 import com.vaadin.invoice.service.InvoiceService;
 import com.vaadin.invoice.ui.MainLayout;
 
-@Route(value = "invoice", layout = MainLayout.class)
+@Route(value = "", layout = MainLayout.class)
 @CssImport("./styles/shared-styles.css")
 @CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
 public class InvoiceView extends VerticalLayout {

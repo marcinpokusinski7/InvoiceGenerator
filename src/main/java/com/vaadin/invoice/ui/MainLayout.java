@@ -18,7 +18,7 @@ import com.vaadin.invoice.ui.views.ProductView;
 
 @CssImport("./styles/shared-styles.css")
 @JsModule("@vaadin/vaadin-lumo-styles/presets/compact.js")
-@Theme(Lumo.class)
+@Theme(value = Lumo.class)
 @PWA(name = "Invoice Generator",
         shortName = "IG",
         description = "Vaadin invoice generator",
@@ -33,7 +33,9 @@ public class MainLayout extends AppLayout {
     }
 
     private void createHeader() {
-
+        HorizontalLayout layout = new HorizontalLayout();
+        layout.getThemeList().add("dark");
+        layout.setWidthFull();
         H1 logo = new H1("Invoices Generator");
         logo.addClassName("logo");
         HorizontalLayout header = new HorizontalLayout(logo);
@@ -44,11 +46,8 @@ public class MainLayout extends AppLayout {
         RouterLink productView = new RouterLink("Products", ProductView.class);
         RouterLink invoiceCreation = new RouterLink("Create Invoice", InvoiceGenerator.class);
         Tabs tabs = new Tabs(new Tab(invoiceView), new Tab(productView), new Tab(invoiceCreation));
-
-        addToNavbar(header, tabs);
-
-
+        layout.add(header, tabs);
+        addToNavbar(layout);
     }
-
 
 }
