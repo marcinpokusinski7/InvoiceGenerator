@@ -39,7 +39,7 @@
     </repositories>
 
     <pluginRepositories>
-        <!-- Main Maven repository -->
+        <!-- Main Maven repository  pre-->
         <pluginRepository>
             <id>central</id>
             <url>https://repo.maven.apache.org/maven2</url>

@@ -34,4 +34,6 @@ module.exports = merge(flowDefaults, {
  *     devtool: 'inline-source-map'
  *   });
  * </code>
+ *
+ * //
  */

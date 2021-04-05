@@ -112,7 +112,7 @@ public class InvoiceGenerator extends VerticalLayout {
         multiplePrice(item.getPrice());
         return quantityField;
     }
-
+        ///EDIT MULTIPLE PRICE IN GIRD
     private String multiplePrice(Double item) {
         final String[] totalPrice = new String[1];
         quantityField.addValueChangeListener(e ->{
