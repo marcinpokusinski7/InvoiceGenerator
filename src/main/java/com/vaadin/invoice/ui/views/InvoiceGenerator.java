@@ -1,7 +1,9 @@
 package com.vaadin.invoice.ui.views;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.grid.Grid;
@@ -11,6 +13,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
+import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
@@ -18,6 +21,7 @@ import com.vaadin.invoice.entity.Product;
 import com.vaadin.invoice.service.ProductService;
 import com.vaadin.invoice.ui.MainLayout;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +32,7 @@ public class InvoiceGenerator extends VerticalLayout {
     private ProductService productService;
     List<Integer> productList = new ArrayList<Integer>();
 
+    NumberField quantityField = new NumberField();
     TextField searchItems = new TextField();
     TextField preparedBy = new TextField("Full name");
     TextField clientName = new TextField("Client Full name");
@@ -37,9 +42,10 @@ public class InvoiceGenerator extends VerticalLayout {
     Grid<Product> chooseProduct = new Grid<>(Product.class);
     Grid<Product> productsAdded = new Grid<>(Product.class);
     Button add = new Button("Add");
-    Text totalPrice = new Text("$10.60");
-    Text priceToPay = new Text("Price" + totalPrice);
+//    Text totalPrice = new Text("$10.60");
+//    Text priceToPay = new Text("Price" + totalPrice);
     Button generateInvoice = new Button("Generate Invoice");
+    Button removeItemsFromGrid = new Button("Remove Items");
     Div component1 = new Div();
     Div component2 = new Div();
 
@@ -50,8 +56,8 @@ public class InvoiceGenerator extends VerticalLayout {
         HorizontalLayout layout = new HorizontalLayout();
         layout.setSizeFull();
         configureDiv();
-        component1.add(searchItems, chooseProduct, add, totalPrice);
-        component2.add(productsAdded, generateInvoice);
+        component1.add(searchItems, chooseProduct, add);
+        component2.add(removeItemsFromGrid, productsAdded, generateInvoice);
         layout.add(component1, component2);
 
         configureButtons();
@@ -90,7 +96,36 @@ public class InvoiceGenerator extends VerticalLayout {
         productsAdded.setColumns("productName", "price");
         productsAdded.addThemeVariants(GridVariant.LUMO_NO_BORDER,
                 GridVariant.LUMO_NO_ROW_BORDERS, GridVariant.LUMO_ROW_STRIPES);
+        productsAdded.addComponentColumn(item -> createButton(productsAdded, item)).setHeader("Quantity");
+        productsAdded.addComponentColumn(item -> countPrice(productsAdded, item)).setHeader("Total Price");
     }
+
+    private Component countPrice(Grid<Product> productsAdded, Product item) {
+        return new Text(multiplePrice(item.getPrice()));
+    }
+
+
+    private Component createButton(Grid<Product> productsAdded, Product item) {
+        quantityField.setHasControls(true);
+        quantityField.setMin(1);
+        quantityField.setValue(1d);
+        multiplePrice(item.getPrice());
+        return quantityField;
+    }
+
+    private String multiplePrice(Double item) {
+        final String[] totalPrice = new String[1];
+        quantityField.addValueChangeListener(e ->{
+            BigDecimal tempPrice = null;
+            if(e.getValue() == null){
+                tempPrice = BigDecimal.ZERO;
+            }else {
+                totalPrice[0] = (tempPrice.multiply(BigDecimal.valueOf(item))).toString();
+            }
+        });
+        return totalPrice[0];
+    }
+
 
     private void configureAddButton() {
         add.addClickListener(click -> {
@@ -105,6 +140,8 @@ public class InvoiceGenerator extends VerticalLayout {
 
     private void configureGenerateButton() {
         generateInvoice.getStyle().set("margin-left", "5px");
+        removeItemsFromGrid.getStyle().set("margin-right", "auto");
+        removeItemsFromGrid.addThemeVariants(ButtonVariant.LUMO_ERROR);
     }
 
     private void configureButtons() {
