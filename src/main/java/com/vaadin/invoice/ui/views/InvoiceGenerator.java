@@ -22,6 +22,7 @@ import com.vaadin.invoice.service.ProductService;
 import com.vaadin.invoice.ui.MainLayout;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,17 +33,18 @@ public class InvoiceGenerator extends VerticalLayout {
     private ProductService productService;
     List<Integer> productList = new ArrayList<Integer>();
 
-    NumberField quantityField = new NumberField();
+    BigDecimal tempPrice;
+
     TextField searchItems = new TextField();
     TextField preparedBy = new TextField("Full name");
     TextField clientName = new TextField("Client Full name");
     DatePicker dateOfPreparation = new DatePicker();
-    DatePicker PaymentDate = new DatePicker();
+    DatePicker paymentDate = new DatePicker();
     RadioButtonGroup<String> radioGroup = new RadioButtonGroup<>();
     Grid<Product> chooseProduct = new Grid<>(Product.class);
     Grid<Product> productsAdded = new Grid<>(Product.class);
     Button add = new Button("Add");
-//    Text totalPrice = new Text("$10.60");
+    //    Text totalPrice = new Text("$10.60");
 //    Text priceToPay = new Text("Price" + totalPrice);
     Button generateInvoice = new Button("Generate Invoice");
     Button removeItemsFromGrid = new Button("Remove Items");
@@ -54,12 +56,12 @@ public class InvoiceGenerator extends VerticalLayout {
         addClassName("list-view");
         setSizeFull();
         HorizontalLayout layout = new HorizontalLayout();
+        VerticalLayout fulllayout = new VerticalLayout();
         layout.setSizeFull();
         configureDiv();
-        component1.add(searchItems, chooseProduct, add);
+        component1.add(searchItems, chooseProduct, add , new VerticalLayout(preparedBy,clientName,dateOfPreparation,paymentDate));
         component2.add(removeItemsFromGrid, productsAdded, generateInvoice);
         layout.add(component1, component2);
-
         configureButtons();
         configureGenerateButton();
         radioButtons();
@@ -86,6 +88,7 @@ public class InvoiceGenerator extends VerticalLayout {
         chooseProduct.addThemeVariants(GridVariant.LUMO_NO_BORDER,
                 GridVariant.LUMO_NO_ROW_BORDERS, GridVariant.LUMO_ROW_STRIPES);
         chooseProduct.setSelectionMode(Grid.SelectionMode.MULTI);
+        chooseProduct.getStyle().set("border", "1px solid #d3d3d3");
     }
 
     private void configureGrid() {
@@ -94,36 +97,35 @@ public class InvoiceGenerator extends VerticalLayout {
         productsAdded.setMinHeight("400px");
         productsAdded.getColumns().forEach(col -> col.setAutoWidth(true));
         productsAdded.setColumns("productName", "price");
+        productsAdded.getStyle().set("border", "1px solid #d3d3d3");
         productsAdded.addThemeVariants(GridVariant.LUMO_NO_BORDER,
                 GridVariant.LUMO_NO_ROW_BORDERS, GridVariant.LUMO_ROW_STRIPES);
         productsAdded.addComponentColumn(item -> createButton(productsAdded, item)).setHeader("Quantity");
-        productsAdded.addComponentColumn(item -> countPrice(productsAdded, item)).setHeader("Total Price");
-    }
-
-    private Component countPrice(Grid<Product> productsAdded, Product item) {
-        return new Text(multiplePrice(item.getPrice()));
+        productsAdded.addComponentColumn(item -> totalPrice(productsAdded, item)).setHeader("Total Price");
     }
 
 
-    private Component createButton(Grid<Product> productsAdded, Product item) {
+    public Component createButton(Grid<Product> productsAdded, Product item) {
+        NumberField quantityField = new NumberField();
+        quantityField.addValueChangeListener(e -> {
+            BigDecimal totalValue;
+            if (e.getValue() == null) {
+                totalValue = BigDecimal.ZERO;
+            } else {
+                totalValue = BigDecimal.valueOf(e.getValue()).multiply(BigDecimal.valueOf(item.getPrice()))
+                        .setScale(2, RoundingMode.HALF_EVEN);
+            }
+            tempPrice = totalValue;
+        });
         quantityField.setHasControls(true);
         quantityField.setMin(1);
         quantityField.setValue(1d);
-        multiplePrice(item.getPrice());
         return quantityField;
     }
-        ///EDIT MULTIPLE PRICE IN GIRD
-    private String multiplePrice(Double item) {
-        final String[] totalPrice = new String[1];
-        quantityField.addValueChangeListener(e ->{
-            BigDecimal tempPrice = null;
-            if(e.getValue() == null){
-                tempPrice = BigDecimal.ZERO;
-            }else {
-                totalPrice[0] = (tempPrice.multiply(BigDecimal.valueOf(item))).toString();
-            }
-        });
-        return totalPrice[0];
+
+    private Component totalPrice(Grid<Product> productsAdded, Product item) {
+        Text text = new Text(tempPrice.toString());
+        return text;
     }
 
 
@@ -134,6 +136,7 @@ public class InvoiceGenerator extends VerticalLayout {
                 productList.add(findId);
             });
             productsAdded.setItems(productService.getProductRepository().findAllById(productList));
+
         });
     }
 
@@ -158,7 +161,7 @@ public class InvoiceGenerator extends VerticalLayout {
         component1.setWidth("100%");
         component2.setHeightFull();
         component1.setHeightFull();
-        component2.getStyle().set("border-left", "1px solid #d3d3d3");
+
 
     }
 
