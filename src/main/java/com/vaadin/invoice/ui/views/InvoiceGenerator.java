@@ -21,7 +21,10 @@ import com.vaadin.invoice.entity.Product;
 import com.vaadin.invoice.service.ProductService;
 import com.vaadin.invoice.ui.MainLayout;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 @Route(value = "create", layout = MainLayout.class)
 @CssImport("./styles/shared-styles.css")
@@ -29,10 +32,9 @@ import java.util.*;
 public class InvoiceGenerator extends VerticalLayout {
     private ProductService productService;
     Map<Integer, Double> values = new TreeMap<Integer, Double>();
+    Map<Integer, Double> totalPriceMap = new TreeMap<Integer, Double>();
     List<Integer> productList = new ArrayList<Integer>();
-    Set<Integer> valuesQuantity = values.keySet();
 
-    List<Double> itemsList = new ArrayList<Double>();
     TextField searchItems = new TextField();
     TextField preparedBy = new TextField("Full name");
     TextField clientName = new TextField("Client Full name");
@@ -53,11 +55,7 @@ public class InvoiceGenerator extends VerticalLayout {
         this.productService = productService;
         addClassName("list-view");
         setSizeFull();
-
-
-
         HorizontalLayout layout = new HorizontalLayout();
-
         layout.setSizeFull();
         configureDiv();
         component1.add(searchItems, chooseProduct, addItem, new VerticalLayout(preparedBy, clientName, dateOfPreparation, radioGroup, paymentDate));
@@ -71,7 +69,6 @@ public class InvoiceGenerator extends VerticalLayout {
         configureAddButton();
         add(layout);
         updateList();
-
     }
 
 
@@ -92,34 +89,25 @@ public class InvoiceGenerator extends VerticalLayout {
                 GridVariant.LUMO_NO_ROW_BORDERS, GridVariant.LUMO_ROW_STRIPES);
         chooseProduct.setSelectionMode(Grid.SelectionMode.MULTI);
         chooseProduct.getStyle().set("border", "1px solid #d3d3d3");
-
     }
 
 
     private Component getItemQuantity(Product item) {
         // set how many items you want buy
-        values.put(item.getId(),1d);
-
+        values.put(item.getId(), 1d);
         NumberField quantityField = new NumberField();
         quantityField.setHasControls(true);
         quantityField.setMin(1);
         quantityField.setMax(item.getInStock());
         quantityField.setValue(1d);
         quantityField.addValueChangeListener(e -> {
-            Integer itemsAddedToCard = 0;
-            if (e.getValue() == null) {
-                itemsAddedToCard = 1;
-            } else {
                 values.put(item.getId(), e.getValue());
-                System.out.println("Value in quantity item put: " +valuesQuantity);
-                System.out.println("Value in quantity item put: " +values);
-            }
         });
         return quantityField;
     }
 
     private Component addedToCard(Grid<Product> productsAdded, Product item) {
-        return new Paragraph(values.get(item.getId()).intValue()+"/" +item.getInStock());
+        return new Paragraph(values.get(item.getId()).intValue() + "/" + item.getInStock());
     }
 
     private void configureGrid() {
@@ -133,14 +121,23 @@ public class InvoiceGenerator extends VerticalLayout {
         productsAdded.getStyle().set("border", "1px solid #d3d3d3");
         productsAdded.addThemeVariants(GridVariant.LUMO_NO_BORDER,
                 GridVariant.LUMO_NO_ROW_BORDERS, GridVariant.LUMO_ROW_STRIPES);
-        productsAdded.addComponentColumn(item -> addTotalPrice(productsAdded, item)).setHeader("Total Price");
+        productsAdded.addComponentColumn(item -> addTotalPrice(productsAdded, item)).setHeader("Total Price").setKey("Total Price");
     }
 
 
     public Component addTotalPrice(Grid<Product> productsAdded, Product item) {
         Paragraph price = new Paragraph();
         price.getStyle().set("font-size", "15px");
-        price.setText("$" + item.getPrice()*values.get(item.getId()));
+        totalPriceMap.put(item.getId(), item.getPrice() * values.get(item.getId()));
+        price.setText("$" + totalPriceMap.get(item.getId()));
+        Double sum = totalPriceMap.values()
+                .stream()
+                .mapToDouble(Double::valueOf)
+                .sum();
+        Paragraph totalPrice = new Paragraph();
+        totalPrice.setText("Total Price: $" +sum);
+        totalPrice.getStyle().set("font-size", "15px");
+        productsAdded.getColumnByKey("Total Price").setFooter(totalPrice);
         return price;
     }
 
@@ -152,6 +149,7 @@ public class InvoiceGenerator extends VerticalLayout {
                 productList.add(findId);
             });
             productsAdded.setItems(productService.getProductRepository().findAllById(productList));
+
         });
 
     }
