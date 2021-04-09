@@ -34,6 +34,11 @@ public class Product implements Cloneable {
     @Column(name = "price")
     private Double price;
 
+    @NotEmpty
+    @NotNull
+    @Column(name = "in_stock")
+    private Integer inStock;
+
     @NotNull
     @Enumerated(EnumType.STRING)  //helps to provide list of prepared enums to choose for generating fv
     @Column(name = "product_Category")

@@ -34,7 +34,7 @@ public class ProductView extends VerticalLayout {
         grid.addClassName("invoice-grid");
         grid.setSizeFull();
         grid.getColumns().forEach(col -> col.setAutoWidth(true));
-        grid.setColumns("productName", "price","productCategory");
+        grid.setColumns("productName", "price","productCategory", "inStock");
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER,
                 GridVariant.LUMO_NO_ROW_BORDERS, GridVariant.LUMO_ROW_STRIPES);
     }
