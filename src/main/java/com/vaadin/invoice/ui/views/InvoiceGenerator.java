@@ -44,12 +44,12 @@ import java.util.stream.Stream;
 @CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
 public class InvoiceGenerator extends VerticalLayout {
     private ProductService productService;
+    private Integer randomNumberFV;
     H1 invoiceFvNumber = new H1();
     Random random = new Random();
     Map<Integer, Double> values = new TreeMap<Integer, Double>();
     Map<Integer, Double> totalPriceMap = new TreeMap<Integer, Double>();
     List<Integer> productList = new ArrayList<Integer>();
-    List<Double> productQuantity = new ArrayList<>();
     List<Double> productPrice = new ArrayList<>();
     List<String> productName = new ArrayList<>();
     TextField searchItems = new TextField();
@@ -86,14 +86,14 @@ public class InvoiceGenerator extends VerticalLayout {
         addClassName("list-view");
         setSizeFull();
         configureViews();
-        layoutUnderGrid.add(new VerticalLayout( generateInvoice));
+        layoutUnderGrid.add(new VerticalLayout(generateInvoice));
         layoutFormTwo.add(preparedBy, companyLocation, identificationNumberPreparedBy);
         layoutFormOne.add(clientName, companyLocationOClient, identificationNumber);
         layoutFormThree.add(radioGroup, dateOfPreparation, paymentDate);
         layoutFormFour.add(radioGroupCompany);
         layout2.add(hint);
-        component1.add(searchItems, chooseProduct, addItem, new HorizontalLayout(layoutFormTwo, layoutFormOne, layoutFormFour,layoutFormThree));
-        component2.add(layout2,productsAdded, layoutUnderGrid);
+        component1.add(searchItems, chooseProduct, addItem, new HorizontalLayout(layoutFormTwo, layoutFormOne, layoutFormFour, layoutFormThree));
+        component2.add(layout2, productsAdded, layoutUnderGrid);
         layout3.add(invoiceFvNumber);
         layout.add(component1, component2);
         configureButtons();
@@ -115,7 +115,7 @@ public class InvoiceGenerator extends VerticalLayout {
         radioGroup.setItems("Pay now", "Payment within 14 days", "Choose other date");
         radioGroup.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
         radioGroup.setValue("Pay now");
-        if(radioGroup.getValue().equals("Pay now")){
+        if (radioGroup.getValue().equals("Pay now")) {
             dateOfPreparation.setValue(LocalDate.now());
             paymentDate.setValue(LocalDate.now());
             dateOfPreparation.setEnabled(false);
@@ -129,7 +129,7 @@ public class InvoiceGenerator extends VerticalLayout {
         radioGroupCompany.setValue("Option one");
         radioGroupCompany.setRequired(true);
         radioGroupCompany.setValue("Company invoice");
-        if(radioGroup.getValue().equals("Company invoice")){
+        if (radioGroup.getValue().equals("Company invoice")) {
             companyLocationOClient.setEnabled(true);
             identificationNumber.setEnabled(true);
             companyLocationOClient.setLabel("Company postal address");
@@ -137,11 +137,11 @@ public class InvoiceGenerator extends VerticalLayout {
         }
         radioGroupCompany.addValueChangeListener(event -> {
             if (event.getValue().equals("Personal invoice")) {
-                    companyLocationOClient.setLabel("Customer address");
+                companyLocationOClient.setLabel("Customer address");
                 identificationNumber.setEnabled(false);
             } else if (event.getValue().equals("Company invoice")) {
-               companyLocationOClient.setEnabled(true);
-               identificationNumber.setEnabled(true);
+                companyLocationOClient.setEnabled(true);
+                identificationNumber.setEnabled(true);
                 companyLocationOClient.setLabel("Company postal address");
             }
         });
@@ -231,7 +231,7 @@ public class InvoiceGenerator extends VerticalLayout {
 
 
     private void configureAddButton() {
-        addItem.getStyle().set("margin-left","5px");
+        addItem.getStyle().set("margin-left", "5px");
         addItem.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         addItem.addClickListener(click -> {
             chooseProduct.getSelectedItems().forEach(e -> {
@@ -253,7 +253,6 @@ public class InvoiceGenerator extends VerticalLayout {
         generateInvoice.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         hint.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
     }
-
 
 
     private void configureButtons() {
@@ -284,12 +283,13 @@ public class InvoiceGenerator extends VerticalLayout {
     }
 
     private void generateRandomFv() {
+        randomNumberFV = random.nextInt(Integer.MAX_VALUE);
         invoiceFvNumber.getStyle().set("font-size", "18px");
-        invoiceFvNumber.setText("FV/" + String.valueOf(random.nextInt(Integer.MAX_VALUE)) + "/");
+        invoiceFvNumber.setText("FV/" + String.valueOf(randomNumberFV) + "/");
     }
 
-    private void configureHelpButton(){
-        hint.addClickListener(e->{
+    private void configureHelpButton() {
+        hint.addClickListener(e -> {
             Dialog dialog = new Dialog();
 
             H1 h1 = new H1();
@@ -304,8 +304,8 @@ public class InvoiceGenerator extends VerticalLayout {
         });
     }
 
-    private void configureGenerateInvoiceButton(){
-        generateInvoice.addClickListener(e->{
+    private void configureGenerateInvoiceButton() {
+        generateInvoice.addClickListener(e -> {
             try {
                 pdfCon();
             } catch (IOException ioException) {
@@ -321,6 +321,7 @@ public class InvoiceGenerator extends VerticalLayout {
 
     public void pdfCon() throws IOException, DocumentException, URISyntaxException {
         Document document = new Document();
+        Product product = new Product();
         PdfWriter.getInstance(document, new FileOutputStream("Test.pdf"));
         document.open();
         Font font = FontFactory.getFont(FontFactory.COURIER, 16, BaseColor.BLACK);
@@ -328,12 +329,23 @@ public class InvoiceGenerator extends VerticalLayout {
                 .stream()
                 .mapToDouble(Double::valueOf)
                 .sum();
-        Chunk chunk = new Chunk("FV/" +String.valueOf(random)+ "/", font);
-        Chunk chunk2 = new Chunk(String.valueOf(sum), font);
+
+        Chunk chunk = new Chunk("FV/" + String.valueOf(randomNumberFV) + "/", font);
+        Chunk chunk2 = new Chunk("      Total Price: $" + String.valueOf(sum), font);
+        Chunk chunkName = new Chunk("Prepared By: " + preparedBy.getValue());
+        Chunk chunkDate = new Chunk("Transaction Day: " + dateOfPreparation.getValue() + "/ Payment Day: " + paymentDate.getValue());
+        Chunk chunkAddress = new Chunk("Company Adress: " + companyLocation.getValue());
+        Chunk chunkNIP = new Chunk("Company ID: " + identificationNumberPreparedBy.getValue());
+        Chunk chunkNameClient = new Chunk("Client: " + clientName.getValue());
+        Chunk chunkAddressCompany = new Chunk("Company address: " + companyLocationOClient.getValue());
+        Chunk chunkNIPClient = new Chunk("Client ID: " + identificationNumber.getValue());
+
         PdfDiv div = new PdfDiv();
+        PdfDiv div1 = new PdfDiv();
         PdfDiv div2 = new PdfDiv();
         PdfDiv div3 = new PdfDiv();
         div.addElement(chunk);
+        div.addElement(chunkDate);
         div.setTextAlignment(1);
         div.setPercentageHeight(0.1f);
         PdfPTable table = new PdfPTable(3);
@@ -343,7 +355,16 @@ public class InvoiceGenerator extends VerticalLayout {
         div3.addElement(chunk2);
         div3.setTextAlignment(2);
         div3.getRight();
+        div1.setPercentageHeight(0.25f);
         document.add(div);
+        div1.addElement(chunkName);
+        div1.addElement(chunkAddress);
+        div1.addElement(chunkNIP);
+        div1.addElement(chunkNameClient);
+        div1.addElement(chunkAddressCompany);
+        div1.addElement(chunkNIPClient);
+
+        document.add(div1);
         document.add(div2);
         document.add(div3);
         document.close();
@@ -360,12 +381,12 @@ public class InvoiceGenerator extends VerticalLayout {
                     table.addCell(header);
                 });
     }
-    private void addRows(PdfPTable table) {
 
-        for(int i = 0 ; i<productName.size();i++) {
+    private void addRows(PdfPTable table) {
+        for (int i = 0; i < productName.size(); i++) {
             table.addCell(String.valueOf(productName.get(i)));
             table.addCell(String.valueOf(productPrice.get(i)));
-           table.addCell(String.valueOf(addItem.getId()));
+            table.addCell(String.valueOf(values.getOrDefault(i, 1d)));
         }
     }
 
