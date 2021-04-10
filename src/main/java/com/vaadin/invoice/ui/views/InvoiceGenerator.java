@@ -1,6 +1,10 @@
 package com.vaadin.invoice.ui.views;
 
-import com.itextpdf.text.Document;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.PdfDiv;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
@@ -27,8 +31,13 @@ import com.vaadin.invoice.entity.Product;
 import com.vaadin.invoice.service.ProductService;
 import com.vaadin.invoice.ui.MainLayout;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Route(value = "create", layout = MainLayout.class)
 @CssImport("./styles/shared-styles.css")
@@ -36,9 +45,13 @@ import java.util.*;
 public class InvoiceGenerator extends VerticalLayout {
     private ProductService productService;
     H1 invoiceFvNumber = new H1();
+    Random random = new Random();
     Map<Integer, Double> values = new TreeMap<Integer, Double>();
     Map<Integer, Double> totalPriceMap = new TreeMap<Integer, Double>();
     List<Integer> productList = new ArrayList<Integer>();
+    List<Double> productQuantity = new ArrayList<>();
+    List<Double> productPrice = new ArrayList<>();
+    List<String> productName = new ArrayList<>();
     TextField searchItems = new TextField();
     TextField preparedBy = new TextField("Prepared By");
     TextField companyLocation = new TextField("Company postal address");
@@ -91,6 +104,7 @@ public class InvoiceGenerator extends VerticalLayout {
         configureAddButton();
         generateRandomFv();
         configureHelpButton();
+        configureGenerateInvoiceButton();
         add(layout3, layout, new Footer(new Text("@2021")));
         updateList();
     }
@@ -174,6 +188,7 @@ public class InvoiceGenerator extends VerticalLayout {
         quantityField.setMax(item.getInStock());
         quantityField.setValue(1d);
         quantityField.addValueChangeListener(e -> {
+
             values.put(item.getId(), e.getValue());
         });
         return quantityField;
@@ -222,8 +237,11 @@ public class InvoiceGenerator extends VerticalLayout {
             chooseProduct.getSelectedItems().forEach(e -> {
                 int findId = e.getId();
                 productList.add(findId);
+                productName.add(e.getProductName());
+                productPrice.add(e.getPrice());
             });
             productsAdded.setItems(productService.getProductRepository().findAllById(productList));
+
         });
 
     }
@@ -266,7 +284,6 @@ public class InvoiceGenerator extends VerticalLayout {
     }
 
     private void generateRandomFv() {
-        Random random = new Random();
         invoiceFvNumber.getStyle().set("font-size", "18px");
         invoiceFvNumber.setText("FV/" + String.valueOf(random.nextInt(Integer.MAX_VALUE)) + "/");
     }
@@ -287,8 +304,70 @@ public class InvoiceGenerator extends VerticalLayout {
         });
     }
 
-    private void generatePdfFile(){
+    private void configureGenerateInvoiceButton(){
+        generateInvoice.addClickListener(e->{
+            try {
+                pdfCon();
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            } catch (DocumentException documentException) {
+                documentException.printStackTrace();
+            } catch (URISyntaxException uriSyntaxException) {
+                uriSyntaxException.printStackTrace();
+            }
+        });
+    }
+
+
+    public void pdfCon() throws IOException, DocumentException, URISyntaxException {
         Document document = new Document();
+        PdfWriter.getInstance(document, new FileOutputStream("Test.pdf"));
+        document.open();
+        Font font = FontFactory.getFont(FontFactory.COURIER, 16, BaseColor.BLACK);
+        Double sum = totalPriceMap.values()
+                .stream()
+                .mapToDouble(Double::valueOf)
+                .sum();
+        Chunk chunk = new Chunk("FV/" +String.valueOf(random)+ "/", font);
+        Chunk chunk2 = new Chunk(String.valueOf(sum), font);
+        PdfDiv div = new PdfDiv();
+        PdfDiv div2 = new PdfDiv();
+        PdfDiv div3 = new PdfDiv();
+        div.addElement(chunk);
+        div.setTextAlignment(1);
+        div.setPercentageHeight(0.1f);
+        PdfPTable table = new PdfPTable(3);
+        addTableHeader(table);
+        addRows(table);
+        div2.addElement(table);
+        div3.addElement(chunk2);
+        div3.setTextAlignment(2);
+        div3.getRight();
+        document.add(div);
+        document.add(div2);
+        document.add(div3);
+        document.close();
 
     }
+
+    private void addTableHeader(PdfPTable table) {
+        Stream.of("Product Name", "Price", "Quantity")
+                .forEach(columnTitle -> {
+                    PdfPCell header = new PdfPCell();
+                    header.setBackgroundColor(BaseColor.LIGHT_GRAY);
+                    header.setBorderWidth(2);
+                    header.setPhrase(new Phrase(columnTitle));
+                    table.addCell(header);
+                });
+    }
+    private void addRows(PdfPTable table) {
+
+        for(int i = 0 ; i<productName.size();i++) {
+            table.addCell(String.valueOf(productName.get(i)));
+            table.addCell(String.valueOf(productPrice.get(i)));
+           table.addCell(String.valueOf(addItem.getId()));
+        }
+    }
+
+
 }
