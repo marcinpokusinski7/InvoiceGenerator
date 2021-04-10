@@ -14,10 +14,9 @@ import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Footer;
-import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -67,7 +66,6 @@ public class InvoiceGenerator extends VerticalLayout {
     Grid<Product> productsAdded = new Grid<>(Product.class);
     Button addItem = new Button("Add Items to Invoice");
     Button hint = new Button("Help");
-    Paragraph priceToPayField = new Paragraph();
     Button generateInvoice = new Button("Generate Invoice", VaadinIcon.CLIPBOARD_TEXT.create());
     Div component1 = new Div();
     Div component2 = new Div();
@@ -105,6 +103,7 @@ public class InvoiceGenerator extends VerticalLayout {
         generateRandomFv();
         configureHelpButton();
         configureGenerateInvoiceButton();
+        configureTextFields();
         add(layout3, layout, new Footer(new Text("@2021")));
         updateList();
     }
@@ -165,6 +164,15 @@ public class InvoiceGenerator extends VerticalLayout {
         });
 
     }
+    private void configureTextFields(){
+        identificationNumber.setMaxLength(10);
+        identificationNumber.setMinLength(10);
+        identificationNumberPreparedBy.setMinLength(10);
+        identificationNumberPreparedBy.setMaxLength(10);
+        Icon icon = VaadinIcon.SEARCH.create();
+        searchItems.setPrefixComponent(icon);
+    }
+
 
     private void configureGridWithAvailableItems() {
         chooseProduct.setWidth("99%");
@@ -319,7 +327,7 @@ public class InvoiceGenerator extends VerticalLayout {
     }
 
 
-    public void pdfCon() throws IOException, DocumentException, URISyntaxException {
+    private void pdfCon() throws IOException, DocumentException, URISyntaxException {
         Document document = new Document();
         Product product = new Product();
         PdfWriter.getInstance(document, new FileOutputStream("Test.pdf"));
@@ -389,6 +397,4 @@ public class InvoiceGenerator extends VerticalLayout {
             table.addCell(String.valueOf(values.getOrDefault(i, 1d)));
         }
     }
-
-
 }

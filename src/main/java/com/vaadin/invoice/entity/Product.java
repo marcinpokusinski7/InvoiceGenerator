@@ -29,12 +29,11 @@ public class Product implements Cloneable {
     @Column(name = "product_name")
     private String productName;
 
-    @NotEmpty
     @NotNull
     @Column(name = "price")
     private Double price;
 
-    @NotEmpty
+
     @NotNull
     @Column(name = "in_stock")
     private Integer inStock;
