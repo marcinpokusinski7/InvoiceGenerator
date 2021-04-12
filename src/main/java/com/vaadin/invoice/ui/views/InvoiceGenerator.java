@@ -26,8 +26,11 @@ import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.BeanValidationBinder;
+import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
+import com.vaadin.invoice.entity.Invoice;
 import com.vaadin.invoice.entity.Product;
 import com.vaadin.invoice.service.ProductService;
 import com.vaadin.invoice.ui.MainLayout;
@@ -47,6 +50,7 @@ public class InvoiceGenerator extends VerticalLayout {
 
     private ProductService productService;
     private Integer randomNumberFV;
+    Binder<Invoice> binder = new BeanValidationBinder<>(Invoice.class);
     Document document = new Document();
     H1 invoiceFvNumber = new H1();
     Random random = new Random();
@@ -96,7 +100,8 @@ public class InvoiceGenerator extends VerticalLayout {
         layoutFormThree.add(futurePayment, dateCreated, paymentDate);
         layoutFormFour.add(radioGroupCompany);
         layout2.add(hint);
-        component1.add(searchItems, chooseProduct, addItem, new HorizontalLayout(layoutFormTwo, layoutFormOne, layoutFormFour, layoutFormThree));
+        component1.add(searchItems, chooseProduct, addItem,
+                new HorizontalLayout(layoutFormTwo, layoutFormOne, layoutFormFour, layoutFormThree));
         component2.add(layout2, productsAdded, layoutUnderGrid);
         layout3.add(invoiceFvNumber);
         layout.add(component1, component2);

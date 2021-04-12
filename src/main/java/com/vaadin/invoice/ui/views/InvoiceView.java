@@ -34,7 +34,7 @@ public class InvoiceView extends VerticalLayout {
         grid.addClassName("invoice-grid");
         grid.setSizeFull();
         grid.getColumns().forEach(col -> col.setAutoWidth(true));
-        grid.setColumns("invoiceId" ,"preparedBy", "dateCreated", "paymentDate","paymentDate", "clientName", "totalPrice");
+        grid.setColumns("invoiceId" ,"preparedBy", "dateCreated", "futurePayment","paymentDate", "clientName", "totalPrice");
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER,
                 GridVariant.LUMO_NO_ROW_BORDERS, GridVariant.LUMO_ROW_STRIPES);
     }
