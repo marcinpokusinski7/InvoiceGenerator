@@ -42,15 +42,19 @@ import java.util.stream.Stream;
 @CssImport("./styles/shared-styles.css")
 @CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
 public class InvoiceGenerator extends VerticalLayout {
+
     private ProductService productService;
     private Integer randomNumberFV;
+    Document document = new Document();
     H1 invoiceFvNumber = new H1();
     Random random = new Random();
     Map<Integer, Double> values = new TreeMap<Integer, Double>();
     Map<Integer, Double> totalPriceMap = new TreeMap<Integer, Double>();
     List<Integer> productList = new ArrayList<Integer>();
     List<Double> productPrice = new ArrayList<>();
+    Set<Double> productPrices = new HashSet<>();
     List<String> productName = new ArrayList<>();
+    Set<String> productNames = new HashSet<>();
     TextField searchItems = new TextField();
     TextField preparedBy = new TextField("Prepared By");
     TextField companyLocation = new TextField("Company postal address");
@@ -164,7 +168,8 @@ public class InvoiceGenerator extends VerticalLayout {
         });
 
     }
-    private void configureTextFields(){
+
+    private void configureTextFields() {
         identificationNumber.setMaxLength(10);
         identificationNumber.setMinLength(10);
         identificationNumberPreparedBy.setMinLength(10);
@@ -196,7 +201,6 @@ public class InvoiceGenerator extends VerticalLayout {
         quantityField.setMax(item.getInStock());
         quantityField.setValue(1d);
         quantityField.addValueChangeListener(e -> {
-
             values.put(item.getId(), e.getValue());
         });
         return quantityField;
@@ -315,6 +319,12 @@ public class InvoiceGenerator extends VerticalLayout {
     private void configureGenerateInvoiceButton() {
         generateInvoice.addClickListener(e -> {
             try {
+                productPrices.addAll(productPrice);
+                productNames.addAll(productName);
+                productPrice.clear();
+                productName.clear();
+                productName.addAll(productNames);
+                productPrice.addAll(productPrices);
                 pdfCon();
             } catch (IOException ioException) {
                 ioException.printStackTrace();
@@ -323,14 +333,15 @@ public class InvoiceGenerator extends VerticalLayout {
             } catch (URISyntaxException uriSyntaxException) {
                 uriSyntaxException.printStackTrace();
             }
+
+
         });
     }
 
 
     private void pdfCon() throws IOException, DocumentException, URISyntaxException {
-        Document document = new Document();
-        Product product = new Product();
         PdfWriter.getInstance(document, new FileOutputStream("Test.pdf"));
+
         document.open();
         Font font = FontFactory.getFont(FontFactory.COURIER, 16, BaseColor.BLACK);
         Double sum = totalPriceMap.values()
@@ -376,7 +387,6 @@ public class InvoiceGenerator extends VerticalLayout {
         document.add(div2);
         document.add(div3);
         document.close();
-
     }
 
     private void addTableHeader(PdfPTable table) {
@@ -391,10 +401,11 @@ public class InvoiceGenerator extends VerticalLayout {
     }
 
     private void addRows(PdfPTable table) {
+
         for (int i = 0; i < productName.size(); i++) {
             table.addCell(String.valueOf(productName.get(i)));
             table.addCell(String.valueOf(productPrice.get(i)));
-            table.addCell(String.valueOf(values.getOrDefault(i, 1d)));
+            table.addCell(String.valueOf(values.getOrDefault(i, 1d))); // need to be repaired
         }
     }
 }
