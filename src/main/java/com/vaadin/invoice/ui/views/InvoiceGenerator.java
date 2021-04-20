@@ -1,10 +1,7 @@
 package com.vaadin.invoice.ui.views;
 
 import com.itextpdf.text.*;
-import com.itextpdf.text.pdf.PdfDiv;
-import com.itextpdf.text.pdf.PdfPCell;
-import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfWriter;
+import com.itextpdf.text.pdf.*;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
@@ -26,14 +23,14 @@ import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.binder.BeanValidationBinder;
-import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
 import com.vaadin.invoice.entity.Invoice;
 import com.vaadin.invoice.entity.Product;
+import com.vaadin.invoice.service.InvoiceService;
 import com.vaadin.invoice.service.ProductService;
 import com.vaadin.invoice.ui.MainLayout;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -48,25 +45,27 @@ import java.util.stream.Stream;
 @CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
 public class InvoiceGenerator extends VerticalLayout {
 
-    private ProductService productService;
+
+    private final ProductService productService;
+    private final InvoiceService invoiceService;
+
     private Integer randomNumberFV;
-    Binder<Invoice> binder = new BeanValidationBinder<>(Invoice.class);
     Document document = new Document();
     H1 invoiceFvNumber = new H1();
     Random random = new Random();
-    Map<Integer, Double> values = new TreeMap<Integer, Double>();
-    Map<Integer, Double> totalPriceMap = new TreeMap<Integer, Double>();
-    List<Integer> productList = new ArrayList<Integer>();
+    Map<Integer, Double> values = new TreeMap<>();
+    Map<Integer, Double> totalPriceMap = new TreeMap<>();
+    List<Integer> productList = new ArrayList<>();
     List<Double> productPrice = new ArrayList<>();
     Set<Double> productPrices = new HashSet<>();
     List<String> productName = new ArrayList<>();
     Set<String> productNames = new HashSet<>();
     TextField searchItems = new TextField();
     TextField preparedBy = new TextField("Prepared By");
-    TextField companyLocation = new TextField("Company postal address");
+    TextField companyLocation = new TextField("Address");
     TextField identificationNumberPreparedBy = new TextField("Identification Number");
-    TextField clientName = new TextField("Client Full name");
-    TextField companyLocationOClient = new TextField("Company postal address");
+    TextField clientName = new TextField("Company");
+    TextField companyLocationOClient = new TextField("Address");
     TextField identificationNumber = new TextField("Identification Number");
     DatePicker dateCreated = new DatePicker("Transaction Day");
     DatePicker paymentDate = new DatePicker("Payment Day");
@@ -79,7 +78,6 @@ public class InvoiceGenerator extends VerticalLayout {
     Button generateInvoice = new Button("Generate Invoice", VaadinIcon.CLIPBOARD_TEXT.create());
     Div component1 = new Div();
     Div component2 = new Div();
-
     HorizontalLayout layout = new HorizontalLayout();
     HorizontalLayout layout2 = new HorizontalLayout();
     HorizontalLayout layout3 = new HorizontalLayout();
@@ -89,8 +87,9 @@ public class InvoiceGenerator extends VerticalLayout {
     VerticalLayout layoutFormFour = new VerticalLayout();
     HorizontalLayout layoutUnderGrid = new HorizontalLayout();
 
-    public InvoiceGenerator(ProductService productService) {
+    public InvoiceGenerator(ProductService productService, InvoiceService invoiceService) {
         this.productService = productService;
+        this.invoiceService = invoiceService;
         addClassName("list-view");
         setSizeFull();
         configureViews();
@@ -139,17 +138,13 @@ public class InvoiceGenerator extends VerticalLayout {
         radioGroupCompany.setValue("Option one");
         radioGroupCompany.setRequired(true);
         radioGroupCompany.setValue("Company invoice");
-        if (futurePayment.getValue().equals("Company invoice")) {
-            companyLocationOClient.setEnabled(true);
-            identificationNumber.setEnabled(true);
-            companyLocationOClient.setLabel("Company postal address");
-            radioGroupCompany.setRequired(true);
-        }
         radioGroupCompany.addValueChangeListener(event -> {
             if (event.getValue().equals("Personal invoice")) {
+                clientName.setLabel("Full name");
                 companyLocationOClient.setLabel("Customer address");
                 identificationNumber.setEnabled(false);
             } else if (event.getValue().equals("Company invoice")) {
+                clientName.setLabel("Company");
                 companyLocationOClient.setEnabled(true);
                 identificationNumber.setEnabled(true);
                 companyLocationOClient.setLabel("Company postal address");
@@ -157,23 +152,26 @@ public class InvoiceGenerator extends VerticalLayout {
         });
 
         futurePayment.addValueChangeListener(event -> {
-            if (event.getValue().equals("Pay now")) {
-                dateCreated.setValue(LocalDate.now());
-                paymentDate.setValue(LocalDate.now());
-                dateCreated.setEnabled(false);
-                paymentDate.setEnabled(false);
-            } else if (event.getValue().equals("Payment within 14 days")) {
-                dateCreated.setValue(LocalDate.now());
-                dateCreated.setEnabled(false);
-                paymentDate.setEnabled(false);
-                paymentDate.setValue(LocalDate.now().plusDays(14));
-            } else if (event.getValue().equals("Choose other data")) {
-                dateCreated.setEnabled(true);
-                paymentDate.setEnabled(true);
-                dateCreated.setMin(LocalDate.now());
+            switch (event.getValue()) {
+                case "Pay now":
+                    dateCreated.setValue(LocalDate.now());
+                    paymentDate.setValue(LocalDate.now());
+                    dateCreated.setEnabled(false);
+                    paymentDate.setEnabled(false);
+                    break;
+                case "Payment within 14 days":
+                    dateCreated.setValue(LocalDate.now());
+                    dateCreated.setEnabled(false);
+                    paymentDate.setEnabled(false);
+                    paymentDate.setValue(LocalDate.now().plusDays(14));
+                    break;
+                case "Choose other date":
+                    dateCreated.setEnabled(true);
+                    paymentDate.setEnabled(true);
+                    dateCreated.setMin(LocalDate.now());
+                    break;
             }
         });
-
     }
 
     private void configureTextFields() {
@@ -191,7 +189,7 @@ public class InvoiceGenerator extends VerticalLayout {
         chooseProduct.setMinHeight("400px");
         chooseProduct.getColumns().forEach(col -> col.setAutoWidth(true));
         chooseProduct.setColumns("productCategory", "productName", "price");
-        chooseProduct.addComponentColumn(item -> getItemQuantity(item)).setHeader("In Stock");
+        chooseProduct.addComponentColumn(this::getItemQuantity).setHeader("In Stock");
         chooseProduct.addThemeVariants(GridVariant.LUMO_NO_BORDER,
                 GridVariant.LUMO_NO_ROW_BORDERS, GridVariant.LUMO_ROW_STRIPES);
         chooseProduct.setSelectionMode(Grid.SelectionMode.MULTI);
@@ -207,13 +205,11 @@ public class InvoiceGenerator extends VerticalLayout {
         quantityField.setMin(1);
         quantityField.setMax(item.getInStock());
         quantityField.setValue(1d);
-        quantityField.addValueChangeListener(e -> {
-            values.put(item.getId(), e.getValue());
-        });
+        quantityField.addValueChangeListener(e -> values.put(item.getId(), e.getValue()));
         return quantityField;
     }
 
-    private Component addedToCard(Grid<Product> productsAdded, Product item) {
+    private Component addedToCard(Product item) {
         return new Paragraph(values.get(item.getId()).intValue() + "/" + item.getInStock());
     }
 
@@ -224,7 +220,7 @@ public class InvoiceGenerator extends VerticalLayout {
         productsAdded.setMinHeight("400px");
         productsAdded.getColumns().forEach(col -> col.setAutoWidth(true));
         productsAdded.setColumns("productName", "price");
-        productsAdded.addComponentColumn(item -> addedToCard(productsAdded, item)).setHeader("Quantity");
+        productsAdded.addComponentColumn(this::addedToCard).setHeader("Quantity");
         productsAdded.getStyle().set("border", "1px solid #d3d3d3");
         productsAdded.addThemeVariants(GridVariant.LUMO_NO_BORDER,
                 GridVariant.LUMO_NO_ROW_BORDERS, GridVariant.LUMO_ROW_STRIPES);
@@ -237,7 +233,7 @@ public class InvoiceGenerator extends VerticalLayout {
         price.getStyle().set("font-size", "15px");
         totalPriceMap.put(item.getId(), item.getPrice() * values.get(item.getId()));
         price.setText("$" + totalPriceMap.get(item.getId()));
-        Double sum = totalPriceMap.values()
+        double sum = totalPriceMap.values()
                 .stream()
                 .mapToDouble(Double::valueOf)
                 .sum();
@@ -302,7 +298,7 @@ public class InvoiceGenerator extends VerticalLayout {
     private void generateRandomFv() {
         randomNumberFV = random.nextInt(Integer.MAX_VALUE);
         invoiceFvNumber.getStyle().set("font-size", "18px");
-        invoiceFvNumber.setText("FV/" + String.valueOf(randomNumberFV) + "/");
+        invoiceFvNumber.setText("FV/" + randomNumberFV + "/");
     }
 
     private void configureHelpButton() {
@@ -320,7 +316,8 @@ public class InvoiceGenerator extends VerticalLayout {
         });
     }
 
-    private void configureGenerateInvoiceButton() {
+    @Transactional
+    public void configureGenerateInvoiceButton() {
         generateInvoice.addClickListener(e -> {
             try {
                 productPrices.addAll(productPrice);
@@ -329,28 +326,45 @@ public class InvoiceGenerator extends VerticalLayout {
                 productName.clear();
                 productName.addAll(productNames);
                 productPrice.addAll(productPrices);
+                addToDB();
                 pdfCon();
-            } catch (IOException ioException) {
+            } catch (IOException | DocumentException | URISyntaxException ioException) {
                 ioException.printStackTrace();
-            } catch (DocumentException documentException) {
-                documentException.printStackTrace();
-            } catch (URISyntaxException uriSyntaxException) {
-                uriSyntaxException.printStackTrace();
             }
         });
     }
 
 
+    @Transactional
+    public void addToDB() {
+        Invoice invoice = new Invoice();
+        invoice.setClientName(clientName.getValue());
+        invoice.setDateCreated(dateCreated.getValue());
+        invoice.setPaymentDate(paymentDate.getValue());
+        if (paymentDate.getValue().equals(dateCreated.getValue())) {
+            invoice.setFuturePayment("false");
+        } else
+            invoice.setFuturePayment("true");
+        invoice.setPreparedBy(preparedBy.getValue());
+        double sum = totalPriceMap.values()
+                .stream()
+                .mapToDouble(Double::valueOf)
+                .sum();
+        invoice.setTotalPrice(sum);
+        System.out.println(" " + invoice.toString());
+        invoiceService.save(invoice);
+    }
+
     private void pdfCon() throws IOException, DocumentException, URISyntaxException {
         PdfWriter.getInstance(document, new FileOutputStream("Test.pdf"));
         document.open();
         Font font = FontFactory.getFont(FontFactory.COURIER, 16, BaseColor.BLACK);
-        Double sum = totalPriceMap.values()
+        double sum = totalPriceMap.values()
                 .stream()
                 .mapToDouble(Double::valueOf)
                 .sum();
-        Chunk chunk = new Chunk("FV/" + String.valueOf(randomNumberFV) + "/", font);
-        Chunk chunk2 = new Chunk("      Total Price: $" + String.valueOf(sum), font);
+        Chunk chunk = new Chunk("FV/" + randomNumberFV + "/", font);
+        Chunk chunk2 = new Chunk("      Total Price: $" + sum, font);
         Chunk chunkName = new Chunk("Prepared By: " + preparedBy.getValue());
         Chunk chunkDate = new Chunk("Transaction Day: " + dateCreated.getValue() + "/ Payment Day: " + paymentDate.getValue());
         Chunk chunkAddress = new Chunk("Company Adress: " + companyLocation.getValue());
@@ -385,6 +399,12 @@ public class InvoiceGenerator extends VerticalLayout {
         document.add(div2);
         document.add(div3);
         document.close();
+        try {
+            PdfReader pdfReader = new PdfReader("Test.pdf");
+            pdfReader.getPdfVersion();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void addTableHeader(PdfPTable table) {

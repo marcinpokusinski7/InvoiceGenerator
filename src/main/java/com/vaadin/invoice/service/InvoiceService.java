@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,6 +26,13 @@ public class InvoiceService {
     public InvoiceService(ProductRepository productRepository, InvoiceRepository invoiceRepository) {
         this.productRepository = productRepository;
         this.invoiceRepository = invoiceRepository;
+    }
+
+    @PersistenceContext
+    EntityManager em;
+
+    public EntityManager getEm() {
+        return em;
     }
 
     public List<Invoice> findAll(){

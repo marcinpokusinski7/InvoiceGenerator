@@ -16,7 +16,6 @@ import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.converter.StringToIntegerConverter;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.invoice.entity.Product;
-import com.vaadin.invoice.service.ProductService;
 
 public class ProductForm extends FormLayout {
     TextField productName = new TextField("Product Name");
@@ -30,7 +29,7 @@ public class ProductForm extends FormLayout {
 
     Binder<Product> binder = new BeanValidationBinder<>(Product.class);
 
-    public ProductForm(ProductService productService) {
+    public ProductForm() {
         addClassName("product-form");
         binder.forField(inStock).withNullRepresentation("").withConverter(new StringToIntegerConverter("Must enter a number"))
                 .bind(Product::getInStock, Product::setInStock);
@@ -40,9 +39,7 @@ public class ProductForm extends FormLayout {
         add(productName, price,
                 productCategory, inStock,
                 createButtonLayout());
-
     }
-
 
     public void setProduct(Product product) {
         binder.setBean(product);
@@ -52,18 +49,12 @@ public class ProductForm extends FormLayout {
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
         delete.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_ERROR);
         close.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
         save.addClickListener(event -> validateAndSave());
         delete.addClickListener(event -> fireEvent(new DeleteEvent(this, binder.getBean())));
         close.addClickListener(event -> fireEvent(new CloseEvent(this)));
-
         binder.addStatusChangeListener(evt -> save.setEnabled(binder.isValid()));
-
         save.addClickShortcut(Key.ENTER);
         close.addClickShortcut(Key.ESCAPE);
-
-
-
         return new HorizontalLayout(save, delete, close);
     }
 
@@ -75,7 +66,7 @@ public class ProductForm extends FormLayout {
     }
 
     public static abstract class ProductFormEvent extends ComponentEvent<ProductForm> {
-        private Product product;
+        private final Product product;
 
         protected ProductFormEvent(ProductForm source, Product product) {
             super(source, false);

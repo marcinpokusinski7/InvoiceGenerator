@@ -13,8 +13,8 @@ import com.vaadin.invoice.ui.MainLayout;
 @CssImport("./styles/shared-styles.css")
 @CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
 public class InvoiceView extends VerticalLayout {
-    private Grid<Invoice> grid = new Grid<>(Invoice.class);
-    private InvoiceService invoiceService;
+    private final Grid<Invoice> grid = new Grid<>(Invoice.class);
+    private final InvoiceService invoiceService;
 
     public InvoiceView(InvoiceService invoiceService) {
         this.invoiceService = invoiceService;

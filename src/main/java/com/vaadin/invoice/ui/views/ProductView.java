@@ -21,8 +21,8 @@ import com.vaadin.invoice.ui.forms.ProductForm;
 @CssImport(value = "./styles/vaadin-text-field-styles.css", themeFor = "vaadin-text-field")
 public class ProductView extends VerticalLayout {
     private final ProductForm form;
-    private Grid<Product> grid = new Grid<>(Product.class);
-    private ProductService productService;
+    private final Grid<Product> grid = new Grid<>(Product.class);
+    private final ProductService productService;
     Button addProduct = new Button("Add Product", click -> addProduct());
     TextField searchItems = new TextField();
 
@@ -32,7 +32,7 @@ public class ProductView extends VerticalLayout {
         setSizeFull();
         configureGrid();
         configureButtons();
-        form = new ProductForm(productService);
+        form = new ProductForm();
         form.addListener(ProductForm.SaveEvent.class, this::saveProduct);
         form.addListener(ProductForm.DeleteEvent.class, this::deleteProduct);
         form.addListener(ProductForm.CloseEvent.class, e -> closeEditor());

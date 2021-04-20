@@ -4,12 +4,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import java.sql.Date;
+import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
-
 
 @Entity
 @Table(name = "invoice")
@@ -24,32 +22,26 @@ public class Invoice implements Cloneable {
 
     @Column(name = "prepared_by")
     @NotNull
-    @NotEmpty
     private String preparedBy;
 
     @Column(name = "date_created")
     @NotNull
-    @NotEmpty
-    private Date dateCreated;
+    private LocalDate dateCreated;
 
     @Column(name = "future_payment")
     @NotNull
-    @NotEmpty
-    private Boolean futurePayment;
+    private String futurePayment;
 
     @Column(name = "payment_date")
     @NotNull
-    @NotEmpty
-    private Date paymentDate;
+    private LocalDate paymentDate;
 
     @Column(name = "client_name")
     @NotNull
-    @NotEmpty
     private String clientName;
 
     @Column(name = "total_price")
     @NotNull
-    @NotEmpty
     private Double totalPrice;
 
     @OneToMany(mappedBy = "invoice", fetch = FetchType.EAGER)
