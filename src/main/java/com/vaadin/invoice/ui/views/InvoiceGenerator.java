@@ -1,9 +1,13 @@
 package com.vaadin.invoice.ui.views;
 
 import com.itextpdf.text.*;
-import com.itextpdf.text.pdf.*;
+import com.itextpdf.text.pdf.PdfDiv;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -32,6 +36,7 @@ import com.vaadin.invoice.service.ProductService;
 import com.vaadin.invoice.ui.MainLayout;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -328,12 +333,12 @@ public class InvoiceGenerator extends VerticalLayout {
                 productPrice.addAll(productPrices);
                 addToDB();
                 pdfCon();
+                UI.getCurrent().getPage().reload();
             } catch (IOException | DocumentException | URISyntaxException ioException) {
                 ioException.printStackTrace();
             }
         });
     }
-
 
     @Transactional
     public void addToDB() {
@@ -356,7 +361,8 @@ public class InvoiceGenerator extends VerticalLayout {
     }
 
     private void pdfCon() throws IOException, DocumentException, URISyntaxException {
-        PdfWriter.getInstance(document, new FileOutputStream("Test.pdf"));
+        File file = new File(String.valueOf(randomNumberFV));
+        PdfWriter.getInstance(document, new FileOutputStream(file));
         document.open();
         Font font = FontFactory.getFont(FontFactory.COURIER, 16, BaseColor.BLACK);
         double sum = totalPriceMap.values()
@@ -399,11 +405,22 @@ public class InvoiceGenerator extends VerticalLayout {
         document.add(div2);
         document.add(div3);
         document.close();
+        openPdf(file);
+    }
+
+    private void openPdf(File pdfFile) {
         try {
-            PdfReader pdfReader = new PdfReader("Test.pdf");
-            pdfReader.getPdfVersion();
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (pdfFile.exists()) {
+                Process p = Runtime
+                        .getRuntime()
+                        .exec("rundll32 url.dll,FileProtocolHandler "+pdfFile.toString());  //opens pdfFile
+                p.waitFor();
+            } else {
+                System.out.println("File is not exists");
+            }
+            System.out.println("Done");
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 
